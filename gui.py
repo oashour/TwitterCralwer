@@ -1,11 +1,12 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
-from twitter2 import *
+from twitter import *
 import time
 import inspect
 from PIL import Image, ImageTk
 import os
+import codecs
 
 
 def str2Bool(str):
@@ -39,7 +40,6 @@ class Fetcher(ttk.Frame):
         self.initUI()
 
     def initUI(self):
-        
         # Set up string variables for labels and data entry
         self.query = StringVar() 
         self.query.trace("w", self.enableFetchButton)
@@ -139,6 +139,10 @@ class Fetcher(ttk.Frame):
         self.viewerButton = ttk.Button(self, text="Viewer", 
                    command=self.initViewer, state='disabled')
         self.viewerButton.grid(column=3, row=16, sticky=W)
+        ######################################################################################3
+        self.textViewerButton = ttk.Button(self, text="Text Viewer", 
+                   command=self.initTextViewer, state='disabled')
+        self.textViewerButton.grid(column=3, row=17, sticky=W)
 
         ######################################################################################3
         # Add padding for all children
@@ -158,7 +162,7 @@ class Fetcher(ttk.Frame):
         self.menubar.add_cascade(menu=self.menuEdit, label='Edit')
         #*************************************************************************************
         self.menuFile.add_command(label='New')
-        self.menuFile.add_command(label='Open')
+        self.menuFile.add_command(label='Open', command=self.askOpenFileName)
         self.menuFile.add_command(label='Close')
         #*************************************************************************************
         self.menuEdit.add_command(label='Authentication Settings', command=self.initAuth)
@@ -207,8 +211,10 @@ class Fetcher(ttk.Frame):
     def enableViewerButton(self, *args):
         if self.fetched.get():
             self.viewerButton.configure(state='normal')
+            self.textViewerButton.configure(state='normal')
         else:
             self.viewerButton.configure(state='disabled')
+            self.textViewerButton.configure(state='disabled')
 
     def callbackViewMedia(self, *args):
         if self.viewMedia.get() == "True":
@@ -231,6 +237,15 @@ class Fetcher(ttk.Frame):
             self.logNameEntry.configure(state="normal")
         else:
             self.logNameEntry.configure(state="disabled")
+
+    def askOpenFileName(self):
+        """Returns a selected directoryname."""
+        file = filedialog.askopenfilename()
+        with codecs.open(file, "r") as myfile:
+            data = myfile.read()
+        self.table = data
+        self.fetched.set(True)
+        self.initTextViewer()
 
     def askDirectory(self):
         """Returns a selected directoryname."""
@@ -269,6 +284,7 @@ class Fetcher(ttk.Frame):
             self.tweets = result[0]
             self.total = result[1]
             self.photoDir = result[2]
+            self.table = result[3]
             self.fetched.set(True)
             
             # Change back to original directory
@@ -288,6 +304,10 @@ class Fetcher(ttk.Frame):
     def initAuth(self, *args):
         authSettings = AuthSettings(self)
         authSettings.mainloop()
+
+    def initTextViewer(self, *args):
+        textViewer = TextViewer(self)
+        textViewer.mainloop()
 
 class Preferences(Toplevel):
     def __init__(self, parent):
@@ -417,6 +437,36 @@ class AuthSettings(Toplevel):
                 f.write(item)
                 f.write("\n")
         self.destroy()
+
+class TextViewer(Toplevel):
+    def __init__(self, parent):
+        Toplevel.__init__(self)
+        self.parent = parent
+        self.title("Text Viewer")
+        self.lift(self.parent)
+
+        self.initUI()
+
+    def initUI(self):
+
+        xscrollbar = Scrollbar(self, orient=HORIZONTAL)
+        xscrollbar.grid(row=1, column=0, sticky=N+S+E+W)
+
+        yscrollbar = Scrollbar(self)
+        yscrollbar.grid(row=0, column=1, sticky=N+S+E+W)
+
+        text = Text(self, wrap=NONE,
+                    xscrollcommand=xscrollbar.set,
+                    yscrollcommand=yscrollbar.set)
+        text.grid(row=0, column=0)
+
+        xscrollbar.config(command=text.xview)
+        yscrollbar.config(command=text.yview)
+        #with codecs.open("cache/log.txt", "r") as myfile:
+        #    data=myfile.read()
+        
+        data=self.parent.table.encode('utf-8', 'replace')
+        text.insert(END, data)
 
 class Viewer(Toplevel):
     def __init__(self, parent):

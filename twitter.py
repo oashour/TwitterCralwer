@@ -128,7 +128,8 @@ def fetch_tweets(apiKey, apiSecret, accessToken, accessTokenSecret,
 
     # print table
     if saveLog:
-        f.write(tabulate(data, headers=tableHeader, tablefmt='fancy_grid'))
+        table = tabulate(data, headers=tableHeader, tablefmt='fancy_grid')
+        f.write(table)
     
     #for i in range(total):
     #    print(data[i]) 
@@ -137,7 +138,7 @@ def fetch_tweets(apiKey, apiSecret, accessToken, accessTokenSecret,
     for i in range(total):
         dictList.append(dict(zip(keys, data[i])))
 
-    result = [dictList, total, workDir]
+    result = [dictList, total, workDir, table]
     os.chdir("..")
     print("Done Fetching!")
 
