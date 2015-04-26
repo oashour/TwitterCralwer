@@ -7,14 +7,11 @@ import os
 import time
 
 # Connect to the API
-def fetch_tweets(query, lang='-', nTweets=100, nFlush=100, media='-',
+def fetch_tweets(apiKey, apiSecret, accessToken, accessTokenSecret,
+                 query, lang='-', nTweets=100, nFlush=100, media='-',
                  mSize='medium', saveMedia="False", viewMedia="True",
                  workDir='cache', saveLog="True", logName='log.txt'):
 
-    apiKey="lNPmHMmEPYajuMltc2KuJuzMv"
-    apiSecret="B21Nh5x4yFbjesT47nsR1wJX4puMwmuNWQAMARw0sAWYeIEqc6"
-    accessToken="59862114-THjs0rdX6YSKgcKMqy3EVaocauLTkVODrhB2TNI9u"
-    accessTokenSecret="tB9RUnEO8dGPCjKWTOqpQPpnvtB1VRay9fRUYqEPIM3qX"
     api = TwitterAPI(apiKey, apiSecret, accessToken, accessTokenSecret)
 
     # Create directories and files, etc.
@@ -50,9 +47,9 @@ def fetch_tweets(query, lang='-', nTweets=100, nFlush=100, media='-',
     stream = []
  
     # Create table header for printing
-    tableHeader=["Handle", "Name", "Text", "Time stamp", "Hashtags", 
+    tableHeader=["Name", "Handle", "Text", "Time stamp", "Hashtags", 
                  "Retweets", "Favorites", "Media", "Language", "Img Path"]
-    keys = ["handle", "name", "text", "time", "hashtags", "rtCount", 
+    keys = ["name", "handle", "text", "time", "hashtags", "rtCount", 
             "favCount", "media", "lang", "imgName"]
 
     # tableHeader=["Handle", "Name", "Text", "Time stamp", "Retweets", "Favorites"]
@@ -89,7 +86,7 @@ def fetch_tweets(query, lang='-', nTweets=100, nFlush=100, media='-',
             if tweet['entities']['hashtags']:
                 hashtags = "" 
                 for tag in tweet['entities']['hashtags']:
-                    hashtags + tag['text'] + ", "
+                    hashtags = hashtags + tag['text'] + ", "
             else:
                 hashtags = "-"
 
