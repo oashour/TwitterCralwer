@@ -285,6 +285,7 @@ def fetchTweets(apiKey, apiSecret, accessToken, accessTokenSecret,
         #print(count)
 
     # print table
+    table = "" 
     if saveLog:
         table = tabulate(data, headers=tableHeader, tablefmt='fancy_grid')
         f.write(table)
@@ -301,11 +302,11 @@ def fetchTweets(apiKey, apiSecret, accessToken, accessTokenSecret,
     return result
 
 def main():
-
-    credentials = loadSettings()
-    postTweet(credentials['apiKey'], credentials['apiSecret'],
-                credentials['accessToken'], credentials['accessTokenSecret'],
-                "This is a test tweet from python.")
+    print("Running!")
+    #credentials = loadSettings()
+    #postTweet(credentials['apiKey'], credentials['apiSecret'],
+    #            credentials['accessToken'], credentials['accessTokenSecret'],
+    #            "This is a test tweet from python.")
 
     #streamTweets(credentials['apiKey'], credentials['apiSecret'],
     #            credentials['accessToken'], credentials['accessTokenSecret'],

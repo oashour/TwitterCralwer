@@ -1,7 +1,7 @@
 from tkinter import *
 from tkinter import ttk
 from tkinter import filedialog
-from twitter import *
+import twitter
 import time
 import inspect
 from PIL import Image, ImageTk
@@ -17,11 +17,110 @@ def str2Bool(str):
     
     return result
 
-class Fetcher(ttk.Frame):
+class mainWindow(ttk.Frame):
     def __init__(self, parent):
         ttk.Frame.__init__(self, parent)
         self.parent = parent
         parent.title("Twitter Licker")
+
+        self.grid(column=0, row=0, sticky=(N, W, E, S))
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+        self.initUI()
+
+    def initUI(self):
+        # Set settings
+        self.loadSettings()
+        #####################################################################################
+        # Set up Menus
+        self.initMenuBar()
+        self.initContextMenu()
+        #####################################################################################
+        self.fetcherButton = ttk.Button(self, text="Fetch Tweets", command=self.initFetcher)
+        self.fetcherButton.grid(column=0, row=0, sticky=(W,E))
+        ######################################################################################3
+        self.streamerButton = ttk.Button(self, text="Stream Tweets", 
+                   command=self.initStreamer)
+        self.streamerButton.grid(column=1, row=0, sticky=(W,E))
+        ######################################################################################3
+        # Add padding for all children
+        for child in self.winfo_children(): child.grid_configure(padx=5, pady=5)
+        
+    def initMenuBar(self):
+        # Building menus
+        self.parent.option_add('*tearOff', FALSE)
+        self.menubar = Menu(root)
+        self.parent['menu'] = self.menubar
+        self.menuFile = Menu(self.menubar)
+        self.menuEdit = Menu(self.menubar)
+        self.menubar.add_cascade(menu=self.menuFile, label='File')
+        self.menubar.add_cascade(menu=self.menuEdit, label='Edit')
+        #*************************************************************************************
+        self.menuFile.add_command(label='New')
+        self.menuFile.add_command(label='Open', command=self.askOpenFileName)
+        self.menuFile.add_command(label='Close')
+        #*************************************************************************************
+        self.menuEdit.add_command(label='Authentication Settings', command=self.initAuth)
+        self.menuEdit.add_command(label='Preferences', command=self.initPref)
+
+    def initContextMenu(self):
+        self.contextMenu = Menu(self.parent)
+        for i in ('One', 'Two', 'Three'):
+            self.contextMenu.add_command(label=i)
+        if (self.parent.tk.call('tk', 'windowingsystem')=='aqua'):
+            self.parent.bind('<2>', lambda e: self.contextMenu.post(e.x_root, e.y_root))
+            self.parent.bind('<Control-1>', lambda e: self.contextMenu.post(e.x_root, e.y_root))
+        else:
+            self.parent.bind('<3>', lambda e: self.contextMenu.post(e.x_root, e.y_root))
+
+    def getDefaultArgs(self, func):
+        args, varargs, keywords, defaults = inspect.getargspec(func)
+        return dict(zip(args[-len(defaults):], defaults))
+
+    def loadSettings(self):
+        self.credentials = {}
+        with open("settings/authSettings.txt", 'r') as f:
+            for line in f:
+                items = line.split()
+                (key, values) = (items[0], items[1])
+                self.credentials[key] = values
+
+    def askOpenFileName(self):
+        """Returns a selected directoryname."""
+        file = filedialog.askopenfilename()
+        with codecs.open(file, "r") as myfile:
+            data = myfile.read()
+        self.table = data
+        self.fetched.set(True)
+        self.initTextViewer()
+
+    def initFetcher(self, *args):
+        fetcher = Fetcher(self)
+        #fetcher.mainloop()
+
+    def initStreamer(self, *args):
+        streamer = Streamer(self)
+        #streamer.mainloop()
+
+    def initPref(self, *args):
+        preferences = Preferences(self)
+        #preferences.mainloop()
+
+    def initAuth(self, *args):
+        authSettings = AuthSettings(self)
+        #authSettings.mainloop()
+
+class Fetcher(Toplevel):
+    def __init__(self, parent):
+        Toplevel.__init__(self)
+        self.parent = parent
+        self.title("Tweet Fetcher")
+        self.lift(self.parent)
+
+        #self.minsize(800, 800)
+        #self.maxsize(800, 800)
+        
+        self.initUI()
 
         # At first, there are no tweets and nothing
         self.fetched = BooleanVar()
@@ -34,9 +133,9 @@ class Fetcher(ttk.Frame):
 
         self.rootDir = os.getcwd()
 
-        self.grid(column=0, row=0, sticky=(N, W, E, S))
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
+        #self.grid(column=0, row=0, sticky=(N, W, E, S))
+        #self.columnconfigure(0, weight=1)
+        #self.rowconfigure(0, weight=1)
         self.initUI()
 
     def initUI(self):
@@ -55,11 +154,7 @@ class Fetcher(ttk.Frame):
         self.logName = StringVar()
 
         # Set settings
-        self.defaultSettings()
-        #####################################################################################
-        # Set up Menus
-        self.initMenuBar()
-        self.initContextMenu()
+        self.loadSettings()
         ######################################################################################
         #Set up static labels (tags for entry fields)
         ttk.Label(self, text="Query").grid(column=1, row=1, sticky=W)
@@ -97,7 +192,7 @@ class Fetcher(ttk.Frame):
         self.noMediaButton.grid(column=2, row=8, sticky=W)
         #*************************************************************************************
         self.viewMediaCheck = ttk.Checkbutton(self, variable=self.viewMedia,
-                    onvalue='True', offvalue='False',
+                    onvalue=True, offvalue=False,
                     text = 'Check to view media without saving it',
                     command=self.callbackViewMedia)
         self.viewMediaCheck.grid(column=2, row=9, sticky=W)
@@ -108,7 +203,7 @@ class Fetcher(ttk.Frame):
         self.mSizeCombo.grid(column=2, row=10, sticky=W)
         #*************************************************************************************
         self.saveMediaCheck = ttk.Checkbutton(self, variable=self.saveMedia,
-                    onvalue='True', offvalue='False', 
+                    onvalue=True, offvalue=False, 
                     text = 'Check to save media to drive',
                     command = self.callbackSaveMedia)
         self.saveMediaCheck.grid(column=2, row=11, sticky=W)
@@ -121,7 +216,7 @@ class Fetcher(ttk.Frame):
         self.workDirButton.grid(column=3, row=12, sticky=W)
         #*************************************************************************************
         self.saveLogCheck = ttk.Checkbutton(self, variable=self.saveLog,
-                    onvalue='True', offvalue='False', 
+                    onvalue=True, offvalue=False, 
                     text = 'Check to save log to drive',
                     command = self.callbackLogEntry)
         self.saveLogCheck.grid(column=2, row=13, sticky=W)
@@ -148,42 +243,15 @@ class Fetcher(ttk.Frame):
         # Add padding for all children
         for child in self.winfo_children(): child.grid_configure(padx=5, pady=5)
         
-        self.queryEntry.focus()
-        self.parent.bind('<Return>', self.fetch)
-
-    def initMenuBar(self):
-        # Building menus
-        self.parent.option_add('*tearOff', FALSE)
-        self.menubar = Menu(root)
-        self.parent['menu'] = self.menubar
-        self.menuFile = Menu(self.menubar)
-        self.menuEdit = Menu(self.menubar)
-        self.menubar.add_cascade(menu=self.menuFile, label='File')
-        self.menubar.add_cascade(menu=self.menuEdit, label='Edit')
-        #*************************************************************************************
-        self.menuFile.add_command(label='New')
-        self.menuFile.add_command(label='Open', command=self.askOpenFileName)
-        self.menuFile.add_command(label='Close')
-        #*************************************************************************************
-        self.menuEdit.add_command(label='Authentication Settings', command=self.initAuth)
-        self.menuEdit.add_command(label='Preferences', command=self.initPref)
-
-    def initContextMenu(self):
-        self.contextMenu = Menu(self.parent)
-        for i in ('One', 'Two', 'Three'):
-            self.contextMenu.add_command(label=i)
-        if (self.parent.tk.call('tk', 'windowingsystem')=='aqua'):
-            self.parent.bind('<2>', lambda e: self.contextMenu.post(e.x_root, e.y_root))
-            self.parent.bind('<Control-1>', lambda e: self.contextMenu.post(e.x_root, e.y_root))
-        else:
-            self.parent.bind('<3>', lambda e: self.contextMenu.post(e.x_root, e.y_root))
+        self.queryEntry.focus_set()
+        self.bind('<Return>', self.fetch)
 
     def getDefaultArgs(self, func):
         args, varargs, keywords, defaults = inspect.getargspec(func)
         return dict(zip(args[-len(defaults):], defaults))
 
-    def defaultSettings(self):
-        defaultArgs = self.getDefaultArgs(fetch_tweets)
+    def loadSettings(self):
+        defaultArgs = self.getDefaultArgs(twitter.fetchTweets)
         self.lang.set(defaultArgs['lang'])
         self.nTweets.set(defaultArgs['nTweets'])
         self.nFlush.set(defaultArgs['nFlush'])
@@ -195,12 +263,7 @@ class Fetcher(ttk.Frame):
         self.saveLog.set(defaultArgs['saveLog'])
         self.logName.set(defaultArgs['logName'])
 
-        self.credentials = {}
-        with open("authSettings.txt", 'r') as f:
-            for line in f:
-                items = line.split()
-                (key, values) = (items[0], items[1])
-                self.credentials[key] = values
+        self.credentials = self.parent.credentials
 
     def enableFetchButton(self, *args):
         if self.query.get():
@@ -238,15 +301,6 @@ class Fetcher(ttk.Frame):
         else:
             self.logNameEntry.configure(state="disabled")
 
-    def askOpenFileName(self):
-        """Returns a selected directoryname."""
-        file = filedialog.askopenfilename()
-        with codecs.open(file, "r") as myfile:
-            data = myfile.read()
-        self.table = data
-        self.fetched.set(True)
-        self.initTextViewer()
-
     def askDirectory(self):
         """Returns a selected directoryname."""
         wd = filedialog.askdirectory()
@@ -276,7 +330,7 @@ class Fetcher(ttk.Frame):
             accessToken = self.credentials['accessToken']
             accessTokenSecret = self.credentials['accessTokenSecret']
             # Actually fetch the self.parent.tweets
-            result = fetch_tweets(apiKey, apiSecret, accessToken, accessTokenSecret,
+            result = twitter.fetchTweets(apiKey, apiSecret, accessToken, accessTokenSecret,
                                     query_, lang_, nTweets_, nFlush_, media_, 
                                   mSize_, saveMedia_, viewMedia_, workDir_,
                                   saveLog_, logName_)
@@ -295,19 +349,11 @@ class Fetcher(ttk.Frame):
 
     def initViewer(self, *args):
         viewer = Viewer(self)
-        viewer.mainloop()
-
-    def initPref(self, *args):
-        preferences = Preferences(self)
-        preferences.mainloop()
-
-    def initAuth(self, *args):
-        authSettings = AuthSettings(self)
-        authSettings.mainloop()
+        #viewer.mainloop()
 
     def initTextViewer(self, *args):
         textViewer = TextViewer(self)
-        textViewer.mainloop()
+        #textViewer.mainloop()
 
 class Preferences(Toplevel):
     def __init__(self, parent):
@@ -414,7 +460,7 @@ class AuthSettings(Toplevel):
         
     def reset(self):
         self.credentials = {}
-        with open("defAuthSettings.txt", 'r') as f:
+        with open("settings/defAuthSettings.txt", 'r') as f:
             for line in f:
                 items = line.split()
                 (key, values) = (items[0], items[1])
@@ -429,7 +475,7 @@ class AuthSettings(Toplevel):
         self.parent.credentials['apiSecret'] = self.apiSecret.get()
         self.parent.credentials['accessToken'] = self.accessToken.get()
         self.parent.credentials['accessTokenSecret'] = self.accessTokenSecret.get()
-        with open("authSettings.txt", 'w') as f:
+        with open("settings/authSettings.txt", 'w') as f:
             for key in self.parent.credentials.keys():
                 item = self.parent.credentials[key]
                 f.write(key)
@@ -500,7 +546,7 @@ class Viewer(Toplevel):
         self.favCount.set(self.parent.tweets[self.current.get()]['favCount'])
         self.rtCount.set(self.parent.tweets[self.current.get()]['rtCount'])
         self.hasht.set(self.parent.tweets[self.current.get()]['hashtags'])
-        self.text.set(self.parent.tweets[self.current.get()]['text']) 
+        self.text.set(self.parent.tweets[self.current.get()]['content']) 
         
         if self.parent.tweets[self.current.get()]['imgName']:
             if not os.path.exists(self.parent.tweets[self.current.get()]['imgName']):
@@ -576,7 +622,7 @@ class Viewer(Toplevel):
         self.favCount.set(self.parent.tweets[self.current.get()]['favCount'])
         self.rtCount.set(self.parent.tweets[self.current.get()]['rtCount'])
         self.hasht.set(self.parent.tweets[self.current.get()]['hashtags'])
-        self.text.set(self.parent.tweets[self.current.get()]['text']) 
+        self.text.set(self.parent.tweets[self.current.get()]['content']) 
         if self.parent.tweets[self.current.get()]['imgName']:
             if not os.path.exists(self.parent.tweets[self.current.get()]['imgName']):
                 print("Error. Photo supposedly exists but not found") 
@@ -599,7 +645,7 @@ class Viewer(Toplevel):
         self.favCount.set(self.parent.tweets[self.current.get()]['favCount'])
         self.rtCount.set(self.parent.tweets[self.current.get()]['rtCount'])
         self.hasht.set(self.parent.tweets[self.current.get()]['hashtags'])
-        self.text.set(self.parent.tweets[self.current.get()]['text']) 
+        self.text.set(self.parent.tweets[self.current.get()]['content']) 
         if self.parent.tweets[self.current.get()]['imgName']:
             if not os.path.exists(self.parent.tweets[self.current.get()]['imgName']):
                 print("Error. Photo supposedly exists but not found") 
@@ -612,7 +658,7 @@ class Viewer(Toplevel):
 ##############################################################################3
 
 root = Tk()
-main = Fetcher(root)
+main = mainWindow(root)
 
 root.mainloop()
 
