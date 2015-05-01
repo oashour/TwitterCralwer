@@ -27,7 +27,22 @@ redirect_response = input('Paste the full redirect URL here: ')
 twitter.parse_authorization_response(redirect_response)
 
 # 5. Fetch the access token
-twitter.fetch_access_token(access_token_url)
+a = twitter.fetch_access_token(access_token_url)
+accessToken = a['oauth_token']
+accessTokenSecret = a['oauth_token_secret']
+
+credentials = {}
+credentials['apiKey'] = client_key
+credentials['apiSecret'] = client_secret 
+credentials['accessToken'] = accessToken
+credentials['accessTokenSecret'] = accessTokenSecret
+with open("settings/authSettings.txt", 'w') as f:
+    for key in credentials.keys():
+        item = credentials[key]
+        f.write(key)
+        f.write("    ")
+        f.write(item)
+        f.write("\n")
 
 # 6. Fetch a protected resource, i.e. user profile
 r = twitter.get(protected_url)

@@ -1,4 +1,4 @@
 *.txt
-new.py
+realCrawler.py
 *.swp
 cache/
