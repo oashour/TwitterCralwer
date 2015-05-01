@@ -161,7 +161,7 @@ def streamTweets(apiKey, apiSecret, accessToken, accessTokenSecret,
     #for i in range(total):
     #    print(data[i]) 
     #os.chdir("..")
-    print("Done Fetching!")
+    print("Done Streaming!")
 
 def fetchTweets(apiKey, apiSecret, accessToken, accessTokenSecret,
                  query, lang='-', nTweets=100, nFlush=100, media='-',

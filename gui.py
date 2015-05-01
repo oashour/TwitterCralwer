@@ -23,6 +23,8 @@ class mainWindow(ttk.Frame):
         self.parent = parent
         parent.title("Twitter Licker")
 
+        self.rootDir = os.getcwd()
+
         self.grid(column=0, row=0, sticky=(N, W, E, S))
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -96,19 +98,250 @@ class mainWindow(ttk.Frame):
 
     def initFetcher(self, *args):
         fetcher = Fetcher(self)
-        #fetcher.mainloop()
 
     def initStreamer(self, *args):
         streamer = Streamer(self)
-        #streamer.mainloop()
 
     def initPref(self, *args):
         preferences = Preferences(self)
-        #preferences.mainloop()
 
     def initAuth(self, *args):
         authSettings = AuthSettings(self)
-        #authSettings.mainloop()
+
+class Streamer(Toplevel):
+    def __init__(self, parent):
+        Toplevel.__init__(self)
+        self.parent = parent
+        self.title("Tweet Streamer")
+        self.lift(self.parent)
+
+        self.initUI()
+
+        # At first, there are no tweets and nothing
+        #self.fetched = BooleanVar()
+        #self.fetched.set(False) # This means we haven't fetched yet
+        #self.fetched.trace("w", self.enableViewerButton) # Disabled button until we fetch
+
+        #self.tweets = None
+        #self.photoDir = None
+        #self.total = None
+
+        #self.initUI()
+
+    def initUI(self):
+        # Set up string variables for labels and data entry
+        self.query = StringVar() 
+        self.query.trace("w", self.enableStreamButton)
+        self.lang = StringVar() 
+        self.nTweets = StringVar()
+        self.nFlush = StringVar()
+        self.media = StringVar()
+        #self.mSize = StringVar()
+        #self.viewMedia = StringVar()
+        #self.saveMedia = StringVar()
+        #self.workDir = StringVar()
+        #self.saveLog = StringVar()
+        #self.logName = StringVar()
+
+        # Set settings
+        self.loadSettings()
+        ######################################################################################
+        #Set up static labels (tags for entry fields)
+        ttk.Label(self, text="Query").grid(column=1, row=1, sticky=W)
+        ttk.Label(self, text="Language").grid(column=1, row=2, sticky=W)
+        ttk.Label(self, text="# of Tweets").grid(column=1, row=4, sticky=W)
+        ttk.Label(self, text="Contains Media").grid(column=1, row=6, sticky=W)
+        #ttk.Label(self, text="View Media").grid(column=1, row=9, sticky=W)
+        #ttk.Label(self, text="Media Size").grid(column=1, row=10, sticky=W)
+        #ttk.Label(self, text="Save Media").grid(column=1, row=11, sticky=W)
+        #ttk.Label(self, text="Output Directory").grid(column=1, row=12, sticky=W)
+        #ttk.Label(self, text="Print Log").grid(column=1, row=13, sticky=W)
+        #ttk.Label(self, text="Log Name").grid(column=1, row=14, sticky=W)
+
+        # Set up entry fields
+        ######################################################################################3
+        self.queryEntry = ttk.Entry(self, textvariable=self.query)
+        self.queryEntry.grid(column=2, row=1, sticky=W)
+        #*************************************************************************************
+        self.langCombo = ttk.Combobox(self, textvariable=self.lang, 
+                                  values = ('-', 'en', 'ar', 'jp'))
+        self.langCombo.grid(column=2, row=2, sticky=W)
+        #*************************************************************************************
+        self.nTweetsEntry = ttk.Entry(self, textvariable=self.nTweets)
+        self.nTweetsEntry.grid(column=2, row=4, sticky=W)
+        #*************************************************************************************
+        self.anyMediaButton = ttk.Radiobutton(self, text='Fetch all tweets',
+                            variable=self.media, value='-')
+        self.yesMediaButton = ttk.Radiobutton(self, text='Fetch only tweets with media',
+                            variable=self.media, value='True')
+        self.noMediaButton = ttk.Radiobutton(self, text='Fetch only tweets without media',
+                            variable=self.media, value='False')
+
+        self.anyMediaButton.grid(column=2, row=6, sticky=W)
+        self.yesMediaButton.grid(column=2, row=7, sticky=W)
+        self.noMediaButton.grid(column=2, row=8, sticky=W)
+        #*************************************************************************************
+        #self.viewMediaCheck = ttk.Checkbutton(self, variable=self.viewMedia,
+        #            onvalue=True, offvalue=False,
+        #            text = 'Check to view media without saving it',
+        #            command=self.callbackViewMedia)
+        #self.viewMediaCheck.grid(column=2, row=9, sticky=W)
+        #*************************************************************************************
+        #mSizeValues = ('thumb', 'small', 'medium', 'large')
+        #self.mSizeCombo = ttk.Combobox(self, textvariable=self.mSize, 
+        #                          values = mSizeValues, state='readonly')
+        #self.mSizeCombo.grid(column=2, row=10, sticky=W)
+        #*************************************************************************************
+        #self.saveMediaCheck = ttk.Checkbutton(self, variable=self.saveMedia,
+        #            onvalue=True, offvalue=False, 
+        #            text = 'Check to save media to drive',
+        #            command = self.callbackSaveMedia)
+        #self.saveMediaCheck.grid(column=2, row=11, sticky=W)
+        #*************************************************************************************
+        #self.workDirEntry = ttk.Entry(self, textvariable=self.workDir, state='disabled')
+        #self.workDirEntry.grid(column=2, row=12, sticky=W)
+        #
+        #self.workDirButton = ttk.Button(self, text="select", 
+        #           command=self.askDirectory, state='disabled')
+        #self.workDirButton.grid(column=3, row=12, sticky=W)
+        #*************************************************************************************
+        #self.saveLogCheck = ttk.Checkbutton(self, variable=self.saveLog,
+        #            onvalue=True, offvalue=False, 
+        #            text = 'Check to save log to drive',
+        #            command = self.callbackLogEntry)
+        #self.saveLogCheck.grid(column=2, row=13, sticky=W)
+        #*************************************************************************************
+        #self.logNameEntry = ttk.Entry(self, textvariable=self.logName, state='normal')
+        #self.logNameEntry.grid(column=2, row=14, sticky=W)
+        #*************************************************************************************
+        #bar = ttk.Progressbar(mainWindow, orient=HORIZONTAL, length=200, mode='indeterminate')
+        #bar.grid(column=2, row=15, sticky=W)
+        ######################################################################################3
+        self.streamButton = ttk.Button(self, text="Stream", command=self.stream, 
+                                        state='disabled')
+        self.streamButton.grid(column=3, row=15, sticky=W)
+        ######################################################################################3
+        #self.viewerButton = ttk.Button(self, text="Viewer", 
+        #           command=self.initViewer, state='disabled')
+        #self.viewerButton.grid(column=3, row=16, sticky=W)
+        ######################################################################################3
+        #self.textViewerButton = ttk.Button(self, text="Text Viewer", 
+        #           command=self.initTextViewer, state='disabled')
+        #self.textViewerButton.grid(column=3, row=17, sticky=W)
+
+        ######################################################################################3
+        # Add padding for all children
+        for child in self.winfo_children(): child.grid_configure(padx=5, pady=5)
+        
+        self.queryEntry.focus_set()
+        self.bind('<Return>', self.stream)
+
+    def getDefaultArgs(self, func):
+        args, varargs, keywords, defaults = inspect.getargspec(func)
+        return dict(zip(args[-len(defaults):], defaults))
+
+    def loadSettings(self):
+        defaultArgs = self.getDefaultArgs(twitter.streamTweets)
+        self.lang.set(defaultArgs['lang'])
+        self.nTweets.set(defaultArgs['nTweets'])
+        self.nFlush.set(defaultArgs['nFlush'])
+        self.media.set(defaultArgs['media'])
+        #self.mSize.set(defaultArgs['mSize'])
+        #self.viewMedia.set(defaultArgs['viewMedia'])
+        #self.saveMedia.set(defaultArgs['saveMedia'])
+        #self.workDir.set(defaultArgs['workDir'])
+        #elf.saveLog.set(defaultArgs['saveLog'])
+        #self.logName.set(defaultArgs['logName'])
+
+        self.credentials = self.parent.credentials
+
+    def enableStreamButton(self, *args):
+        if self.query.get():
+            self.streamButton.configure(state='normal')
+        else:
+            self.streamButton.configure(state='disabled')
+
+    #def enableViewerButton(self, *args):
+    #    if self.fetched.get():
+    #        self.viewerButton.configure(state='normal')
+    #        self.textViewerButton.configure(state='normal')
+    #    else:
+    #        self.viewerButton.configure(state='disabled')
+    #        self.textViewerButton.configure(state='disabled')
+
+    #def callbackViewMedia(self, *args):
+    #    if self.viewMedia.get() == "True":
+    #        self.mSizeCombo.configure(state="readonly")
+    #    else:
+    #        self.mSizeCombo.configure(state="disabled")
+
+    #def callbackSaveMedia(self, *args):
+    #    if self.saveMedia.get() == "True":
+    #        self.workDirEntry.configure(state="normal")
+    #        self.workDirButton.configure(state='normal') 
+    #        self.workDir.set(time.strftime("%d_%b_%Y_%H.%M.%S"))
+    #    else:
+    #        self.workDirEntry.configure(state="disabled")
+    #        self.workDirButton.configure(state='disabled') 
+    #        self.workDir.set("cache")
+
+    #def callbackLogEntry(self, *args):
+    #    if self.saveLog.get() == "True":
+    #        self.logNameEntry.configure(state="normal")
+    #    else:
+    #        self.logNameEntry.configure(state="disabled")
+
+    #def askDirectory(self):
+    #    """Returns a selected directoryname."""
+    #    wd = filedialog.askdirectory()
+    #    self.workDir.set(wd)
+
+    def stream(self, *args):
+        try:
+            #bar.start()
+            query_ = self.query.get()
+            if not query_:
+                return
+
+            lang_ = self.lang.get()
+            nTweets_ = int(self.nTweets.get())
+            nFlush_ = int(self.nFlush.get())
+            media_ = str2Bool(self.media.get())
+            #mSize_ = self.mSize.get()
+            #saveMedia_ = str2Bool(self.saveMedia.get())
+            #viewMedia_ = str2Bool(self.viewMedia.get())
+            #workDir_ = self.workDir.get()
+            #saveLog_ = str2Bool(self.saveLog.get())
+            #logName_ = self.logName.get()
+
+            apiKey = self.credentials['apiKey']
+            apiSecret = self.credentials['apiSecret']
+            accessToken = self.credentials['accessToken']
+            accessTokenSecret = self.credentials['accessTokenSecret']
+
+            # Actually fetch the tweets
+            twitter.streamTweets(apiKey, apiSecret, accessToken, accessTokenSecret,
+                                    query_, lang_, nTweets_, nFlush_, media_) 
+            #bar.stop()
+            #self.tweets = result[0]
+            #self.total = result[1]
+            #self.photoDir = result[2]
+            #self.table = result[3]
+            #self.fetched.set(True)
+            
+            # Change back to original directory
+            os.chdir(self.parent.rootDir)
+
+        except ValueError:
+            pass
+
+    def initViewer(self, *args):
+        viewer = Viewer(self)
+        #viewer.mainloop()
+
+    def initTextViewer(self, *args):
+        textViewer = TextViewer(self)
+        #textViewer.mainloop()
 
 class Fetcher(Toplevel):
     def __init__(self, parent):
@@ -117,9 +350,6 @@ class Fetcher(Toplevel):
         self.title("Tweet Fetcher")
         self.lift(self.parent)
 
-        #self.minsize(800, 800)
-        #self.maxsize(800, 800)
-        
         self.initUI()
 
         # At first, there are no tweets and nothing
@@ -131,11 +361,6 @@ class Fetcher(Toplevel):
         self.photoDir = None
         self.total = None
 
-        self.rootDir = os.getcwd()
-
-        #self.grid(column=0, row=0, sticky=(N, W, E, S))
-        #self.columnconfigure(0, weight=1)
-        #self.rowconfigure(0, weight=1)
         self.initUI()
 
     def initUI(self):
@@ -311,7 +536,6 @@ class Fetcher(Toplevel):
             #bar.start()
             query_ = self.query.get()
             if not query_:
-                print("Returning due to empty query")
                 return
 
             lang_ = self.lang.get()
@@ -329,7 +553,8 @@ class Fetcher(Toplevel):
             apiSecret = self.credentials['apiSecret']
             accessToken = self.credentials['accessToken']
             accessTokenSecret = self.credentials['accessTokenSecret']
-            # Actually fetch the self.parent.tweets
+
+            # Actually fetch the tweets
             result = twitter.fetchTweets(apiKey, apiSecret, accessToken, accessTokenSecret,
                                     query_, lang_, nTweets_, nFlush_, media_, 
                                   mSize_, saveMedia_, viewMedia_, workDir_,
@@ -342,7 +567,7 @@ class Fetcher(Toplevel):
             self.fetched.set(True)
             
             # Change back to original directory
-            os.chdir(self.rootDir)
+            os.chdir(self.parent.rootDir)
 
         except ValueError:
             pass
