@@ -2,3 +2,5 @@
 realCrawler.py
 *.swp
 cache/
+
+db.sqlite3
